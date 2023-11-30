@@ -112,12 +112,13 @@ func (agent *SmartAgent) find_leader(agentsOnBike []objects.IBaseBiker, proposed
 
 	for _, others := range agentsOnBike {
 		id := others.GetID()
-		rep := agent.reputationMap[id]
-		score := rep.historyContribution + rep.lootBoxGet/ // Pareto principle: give more energy to those with more outcome
-			+rep.isSameColor/ // Cognitive dimension: is same belief?
-			+rep.energyRemain // necessity: must stay alive
-
-		scores[id] = score
+		if id != agent.GetID():
+			rep := agent.reputationMap[id]
+			score := rep.historyContribution + rep.lootBoxGet/ // Pareto principle: give more energy to those with more outcome
+				+rep.isSameColor/ // Cognitive dimension: is same belief?
+				+rep.energyRemain // necessity: must stay alive
+	
+			scores[id] = score
 	}
 
 	sortedIDs := make([]uuid.UUID, 0, len(scores))
