@@ -296,6 +296,10 @@ func (agent *SmartAgent) rankTargetProposals(proposedLootBox []objects.ILootBox)
 
 		scores = append(scores, score)
 	}
+	 // We choose to use the Borda count method to pick a proposal because it can mitigate the Condorcet paradox.
+         // Borda count needs to get the rank of all candidates to score Borda points.
+         // In this case, according to the Gibbard-Satterthwaite Theorem, Borda count is susceptible to tactical voting.
+         // The following steps tend to achieve the rank of lootbox proposals according to their scores calculated. We will return the highest rank to pick the agent with it. (Another Borda score would consider reputation function)这个后面如果可以再考虑如果能得到的话
 
 	elementCount := make(map[float64]int)
 	for _, num := range scores {
