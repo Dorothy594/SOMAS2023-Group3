@@ -231,18 +231,22 @@ func (agent *SmartAgent) find_closest_lootbox(proposedLootBox []objects.ILootBox
 }
 
 func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, proposedLootBox []objects.ILootBox) error {
+	//dynamic decison of choosing lootbox with the changes in environment
 	max_score := 0.0
-
+	
+	// improve all agents' satisfication: while the energy was too low, all agents desire energy
 	if agent.all_weak(agentsOnBike, proposedLootBox) == true { //all weak
 		agent.find_closest_lootbox(proposedLootBox)
 	}
 
+	// free rider - belief that there is a rule, assume other agents would follow the rule
 	if agent.other_agents_strong(agentsOnBike, proposedLootBox) == true { //is strong
 		agent.find_same_colour_highest_loot_lootbox(proposedLootBox)
 	}
 
 	for _, lootbox := range proposedLootBox {
 		// agent
+		// consider the agent itself's satisfaction
 		loot := (lootbox.GetTotalResources() / 8.0) //normalize
 		is_color := 0.0
 		if lootbox.GetColour() == agent.GetColour() {
@@ -253,6 +257,8 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 		score := 0.2*loot + 0.2*is_color + (-0.3)*normalized_distance
 
 		// environment
+		// social capital framework to decide which agents we should cooperate
+		// deciding the opinion of ther agents
 		same_colour_bikers := make([]objects.IBaseBiker, 0)
 		same_colour := 0
 		for _, others := range agentsOnBike {
@@ -266,9 +272,9 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 		for _, others := range same_colour_bikers {
 			id := others.GetID()
 			rep := agent.reputationMap[id]
-			score += 0.5 * 0.4 * rep.historyContribution /
-				+0.5 * 0.2 * rep.recentContribution /
-				+0.5 * 0.4 * rep.energyRemain
+			score += 0.5 * 0.4 * rep.historyContribution / //opinion, trustness from direct experience
+				+0.5 * 0.2 * rep.recentContribution / //forgiveness
+				+0.5 * 0.4 * rep.energyRemain //improve trustness by decreasing the risk of no efforts
 		}
 
 		if score > max_score {
