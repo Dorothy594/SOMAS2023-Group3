@@ -1,4 +1,4 @@
-﻿package team_3
+package team_3
 
 import (
 	"SOMAS2023/internal/common/objects"
@@ -112,13 +112,14 @@ func (agent *SmartAgent) find_leader(agentsOnBike []objects.IBaseBiker, proposed
 
 	for _, others := range agentsOnBike {
 		id := others.GetID()
-		if id != agent.GetID():
+		if id != agent.GetID() {
 			rep := agent.reputationMap[id]
 			score := rep.historyContribution + rep.lootBoxGet/ // Pareto principle: give more energy to those with more outcome
 				+rep.isSameColor/ // Cognitive dimension: is same belief?
 				+rep.energyRemain // necessity: must stay alive
-	
+
 			scores[id] = score
+		}
 	}
 
 	sortedIDs := make([]uuid.UUID, 0, len(scores))
@@ -233,7 +234,7 @@ func (agent *SmartAgent) find_closest_lootbox(proposedLootBox []objects.ILootBox
 func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, proposedLootBox []objects.ILootBox) error {
 	//dynamic decison of choosing lootbox with the changes in environment
 	max_score := 0.0
-	
+
 	// improve all agents' satisfication: while the energy was too low, all agents desire energy
 	if agent.all_weak(agentsOnBike, proposedLootBox) == true { //all weak
 		agent.find_closest_lootbox(proposedLootBox)
@@ -262,7 +263,7 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 		same_colour_bikers := make([]objects.IBaseBiker, 0)
 		same_colour := 0
 		for _, others := range agentsOnBike {
-			if pthers.GetColour() == lootbox.GetColour() {
+			if others.GetColour() == lootbox.GetColour() {
 				same_colour += 1
 				same_colour_bikers = append(same_colour_bikers, others)
 			}
@@ -303,10 +304,10 @@ func (agent *SmartAgent) rankTargetProposals(proposedLootBox []objects.ILootBox)
 
 		scores = append(scores, score)
 	}
-	 // We choose to use the Borda count method to pick a proposal because it can mitigate the Condorcet paradox.
-         // Borda count needs to get the rank of all candidates to score Borda points.
-         // In this case, according to the Gibbard-Satterthwaite Theorem, Borda count is susceptible to tactical voting.
-         // The following steps tend to achieve the rank of lootbox proposals according to their scores calculated. We will return the highest rank to pick the agent with it. (Another Borda score would consider reputation function)这个后面如果可以再考虑如果能得到的话
+	// We choose to use the Borda count method to pick a proposal because it can mitigate the Condorcet paradox.
+	// Borda count needs to get the rank of all candidates to score Borda points.
+	// In this case, according to the Gibbard-Satterthwaite Theorem, Borda count is susceptible to tactical voting.
+	// The following steps tend to achieve the rank of lootbox proposals according to their scores calculated. We will return the highest rank to pick the agent with it. (Another Borda score would consider reputation function)这个后面如果可以再考虑如果能得到的话
 
 	elementCount := make(map[float64]int)
 	for _, num := range scores {
