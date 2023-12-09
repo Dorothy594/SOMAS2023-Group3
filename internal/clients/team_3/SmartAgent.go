@@ -5,9 +5,10 @@ import (
 	"SOMAS2023/internal/common/physics"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
-	"github.com/google/uuid"
 	"math"
 	"sort"
+
+	"github.com/google/uuid"
 )
 
 type ISmartAgent interface {
@@ -172,6 +173,9 @@ func (agent *SmartAgent) ChangeBike() (targetId uuid.UUID) {
 func (agent *SmartAgent) ProposeDirection() uuid.UUID {
 	// direction is targetLootBox
 	e := agent.decideTargetLootBox(agent.GetGameState().GetMegaBikes()[agent.GetBike()].GetAgents(), agent.GetGameState().GetLootBoxes())
+	//println("agents", len(agent.GetGameState().GetMegaBikes()[agent.GetBike()].GetAgents()))
+	//println("lootboxes", len(agent.GetGameState().GetLootBoxes()))
+
 	// An agent has already proposed its proposal (BordaCount)
 	if e != nil {
 		panic("unexpected error!")
@@ -181,10 +185,14 @@ func (agent *SmartAgent) ProposeDirection() uuid.UUID {
 
 func (agent *SmartAgent) FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) voting.LootboxVoteMap {
 	boxesInMap := agent.GetGameState().GetLootBoxes()
+	// change input of rankTargetProposals to map[uuid.UUID]uuid.UUID
 
-	rank := agent.rankTargetProposals(boxesInMap)
-	// need to be map[uuid.UUID]voting.LootboxVoteMap
-	return rank
+	// rank := agent.rankTargetProposals(boxesInMap)
+	rank := agent.rankTargetProposals(proposals, boxesInMap)
+
+	var lootboxVotes voting.LootboxVoteMap = rank
+
+	return lootboxVotes // need to be map[uuid.UUID]voting.LootboxVoteMap
 }
 
 func (agent *SmartAgent) DecideAllocation() voting.IdVoteMap {
@@ -335,12 +343,12 @@ func (agent *SmartAgent) which_governance_method(agentsOnBike []objects.IBaseBik
 	}
 
 	if (agent_rep.recentContribution < average_recent_contribution) && (agent_rep.historyContribution < average_contribution) {
-		need_deomocracy = 1.0
+		need_deomocracy = 1.0 // don't want a leader
 		need_leadership = 0.0
 		// selfish personality
 	}
 	if agent_rep.energyRemain > 2*average_energyRemain {
-		need_deomocracy = 1.0
+		need_deomocracy = 1.0 // don't want a leader
 		need_leadership = 0.0
 		// fear of being taken advantage of
 	}
@@ -492,14 +500,18 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 	for _, lootbox := range proposedLootBox {
 		// agent
 		// consider the agent itself's satisfaction
-		loot := (lootbox.GetTotalResources() / 8.0) //normalize
+		loot := float64(lootbox.GetTotalResources() / 8.0) //normalize
+
 		is_color := 0.0
 		if lootbox.GetColour() == agent.GetColour() {
 			is_color = 1.0
 		}
+
 		distance := physics.ComputeDistance(lootbox.GetPosition(), agent.GetLocation())
-		normalized_distance := distance / ((utils.GridHeight) * (utils.GridWidth))
-		score := 0.2*loot + 0.2*is_color + (-0.3)*normalized_distance
+		maxDistance := float64(math.Sqrt(utils.GridHeight*utils.GridHeight + utils.GridWidth*utils.GridWidth))
+		normalized_distance := (maxDistance - distance) / maxDistance
+
+		score := 0.3*loot + 0.2*is_color + 0.3*normalized_distance
 
 		// environment
 		// social capital framework to decide which agents we should cooperate
@@ -531,26 +543,62 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 	return nil
 }
 
+func (agent *SmartAgent) rankTargetProposals(proposedLootBox map[uuid.UUID]uuid.UUID, AllLootBox map[uuid.UUID]objects.ILootBox) map[uuid.UUID]float64 {
+	// 每个agent提出了一个lootbox在之前
+	scores := make(map[uuid.UUID]float64)
+
+	sum_score := 0.0
+
+	for other_agent_id, other_agent_proposed_lootbox_id := range proposedLootBox {
+		other_agent_score := 0.0
+		lootbox := AllLootBox[other_agent_proposed_lootbox_id]
+		loot := float64(lootbox.GetTotalResources() / 8.0)
+
+		is_color := 0.0
+		if lootbox.GetColour() == agent.GetColour() {
+			is_color = 1.0
+		}
+
+		rep := agent.reputationMap[other_agent_id]
+		other_agent_score = rep.historyContribution + rep.recentContribution + rep.energyRemain
+
+		distance := physics.ComputeDistance(lootbox.GetPosition(), agent.GetLocation())
+		maxDistance := float64(math.Sqrt(utils.GridHeight*utils.GridHeight + utils.GridWidth*utils.GridWidth))
+		normalized_distance := (maxDistance - distance) / maxDistance
+
+		score := 0.2*loot + 0.4*is_color + 0.2*normalized_distance + 0.2*other_agent_score
+
+		scores[other_agent_id] = score
+		sum_score += score
+	}
+	return scores
+}
+
+/*
 func (agent *SmartAgent) rankTargetProposals(proposedLootBox map[uuid.UUID]objects.ILootBox) map[uuid.UUID]float64 {
-	//scores := make([]float64, 0)
 	scores := make(map[uuid.UUID]float64)
 
 	sum_score := 0.0
 	for lootbox_agent_id, lootbox := range proposedLootBox {
 		other_agents_score := 0.0
 		loot := (lootbox.GetTotalResources() / 8.0)
+
 		is_color := 0.0
 		if lootbox.GetColour() == agent.GetColour() {
 			is_color = 1.0
 		}
+
 		rep := agent.reputationMap[lootbox_agent_id]
 		other_agents_score = rep.historyContribution + rep.recentContribution + rep.energyRemain
+
 		distance := physics.ComputeDistance(lootbox.GetPosition(), agent.GetLocation())
 		normalized_distance := distance / ((utils.GridHeight) * (utils.GridWidth))
+
 		score := 0.2*loot + 0.4*is_color + 0.2*normalized_distance + 0.2*other_agents_score
 
-		scores[lootbox.GetID()] = score
-		//scores = append(scores, score)
+		scores[lootbox_agent_id] = score
+		// scores[lootbox.GetID()] = score
+
 		sum_score += score
 	}
 	// We choose to use the Borda count method to pick a proposal because it can mitigate the Condorcet paradox.
@@ -559,14 +607,17 @@ func (agent *SmartAgent) rankTargetProposals(proposedLootBox map[uuid.UUID]objec
 	// The following steps tend to achieve the rank of lootbox proposals according to their scores calculated. We will return the highest rank to pick the agent with it. (Another Borda score would consider reputation function)这个后面如果可以再考虑如果能得到的话
 
 	// normalize
-	for _, lootbox := range proposedLootBox {
-		scores[lootbox.GetID()] = scores[lootbox.GetID()] / sum_score
+
+	for lootbox_agent_id, _ := range proposedLootBox {
+		scores[lootbox_agent_id] = scores[lootbox_agent_id] / sum_score
 	}
+	println("proposedlootbox", len(proposedLootBox))
 
 	var lootboxVotes voting.LootboxVoteMap = scores
 
 	return lootboxVotes
 }
+*/
 
 // scoreAgentsForAllocation if self energy level is low (below average cost for a lootBox), we follow 'Smallest First', else 'Ration'
 func (agent *SmartAgent) scoreAgentsForAllocation(agentsOnBike []objects.IBaseBiker) (map[uuid.UUID]float64, error) {
