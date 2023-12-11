@@ -408,9 +408,7 @@ func (agent *SmartAgent) vote_leader(agentsOnBike []objects.IBaseBiker) voting.I
 		scores[id] = 0.7*scores1[id] + 0.3*scores2[id]
 	}
 
-	var votes voting.IdVoteMap = scores
-
-	return votes
+	return scores
 }
 
 func (agent *SmartAgent) find_same_colour_highest_loot_lootbox(proposedLootBox map[uuid.UUID]objects.ILootBox) uuid.UUID {
@@ -594,8 +592,6 @@ func (agent *SmartAgent) rankTargetProposals(proposedLootBox map[uuid.UUID]uuid.
 		// this id is other_agent_id, not the lootbox_id
 		scores[id] = float64(scores[id] / sum_score)
 	}
-
-	// var lootboxVotes voting.LootboxVoteMap = scores
 
 	return scores
 }
