@@ -316,7 +316,7 @@ func (agent *SmartAgent) vote_off_leader() bool {
 }
 
 func (agent *SmartAgent) which_governance_method(agentsOnBike []objects.IBaseBiker) utils.Governance {
-	//assume agent only accepts democracy or leadership
+	// assume agent only accepts democracy or leadership
 	// By default, it accpets leadership
 	need_deomocracy := 0.0
 	need_leadership := 1.0
@@ -345,7 +345,8 @@ func (agent *SmartAgent) which_governance_method(agentsOnBike []objects.IBaseBik
 	if agent_rep.energyRemain > 2*average_energyRemain {
 		need_deomocracy = 1.0
 		need_leadership = 0.0
-		// fear of being taken advantage of
+		// rational, fear of being taken advantage of
+		// smart personality
 	}
 
 	if need_deomocracy > need_leadership {
@@ -368,7 +369,11 @@ func (agent *SmartAgent) vote_leader(agentsOnBike []objects.IBaseBiker) voting.I
 		// Pareto principle: give more energy to those with more outcome
 		// Cognitive dimension: is same belief?
 		// necessity: must stay alive
-		score_1 := rep.historyContribution + rep.lootBoxGet + rep.isSameColor + rep.energyRemain + utils.Epsilon
+		score_1 := 0.4*rep.historyContribution + 0.3*rep.lootBoxGet + 0.1*rep.isSameColor + 0.2*rep.energyRemain + utils.Epsilon
+		//fair, selfish, smart
+		//fair: the weights are randomly assigned each time
+		//selfish: score_1 := 0.1*rep.historyContribution + 0.2*rep.lootBoxGet + 0.5*rep.isSameColor + 0.2*rep.energyRemain + utils.Epsilon
+		//smart: score_1 := 0.4*rep.historyContribution + 0.3*rep.lootBoxGet + 0.1*rep.isSameColor + 0.2*rep.energyRemain + utils.Epsilon
 
 		scores1[id] = score_1
 		total_score_1 += score_1
@@ -386,6 +391,7 @@ func (agent *SmartAgent) vote_leader(agentsOnBike []objects.IBaseBiker) voting.I
 		id := others.GetID()
 		rep := agent.reputationMap[id]
 		score_2 := rep.recentContribution + utils.Epsilon // recent progress, Forgiveness if performed bad before
+		// same for all three personalities of agents, as score_2 will be normalized
 		scores2[id] = score_2
 		total_score_2 += score_2
 	}
@@ -512,7 +518,7 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 			is_color = 1.0
 		}
 		distance := physics.ComputeDistance(lootbox.GetPosition(), agent.GetLocation())
-		maxDistance := float64(math.Sqrt(utils.GridHeight*utils.GridHeight + utils.GridWidth*utils.GridWidth))
+		maxDistance := float64(utils.GridHeight*utils.GridHeight + utils.GridWidth*utils.GridWidth)
 		normalized_distance := (maxDistance - distance) / maxDistance
 		score := 0.2*loot + 0.2*is_color + 0.3*normalized_distance + utils.Epsilon
 
@@ -567,7 +573,7 @@ func (agent *SmartAgent) rankTargetProposals(proposedLootBox map[uuid.UUID]uuid.
 		other_agents_score = rep.historyContribution + rep.recentContribution + rep.energyRemain
 
 		distance := physics.ComputeDistance(lootbox.GetPosition(), agent.GetLocation())
-		maxDistance := float64(math.Sqrt(utils.GridHeight*utils.GridHeight + utils.GridWidth*utils.GridWidth))
+		maxDistance := float64(utils.GridHeight*utils.GridHeight + utils.GridWidth*utils.GridWidth)
 		normalized_distance := (maxDistance - distance) / maxDistance
 		if math.IsNaN(normalized_distance) {
 			normalized_distance = 0.0
@@ -575,7 +581,7 @@ func (agent *SmartAgent) rankTargetProposals(proposedLootBox map[uuid.UUID]uuid.
 
 		score := 0.3*loot + 0.3*is_color + 0.2*normalized_distance + 0.2*other_agents_score + utils.Epsilon
 
-		scores[other_agent_id] = score
+		scores[other_agent_proposed_lootbox_id] += score
 		sum_score += score
 	}
 	// We choose to use the Borda count method to pick a proposal because it can mitigate the Condorcet paradox.

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/google/uuid"
@@ -30,7 +31,7 @@ var (
 	getPointsVariance = func(statistics *AgentStatistics) map[uuid.UUID]float64 { return statistics.AgentPointsVariance }
 )
 
-func averageStatisticsOverRounds(statisticsPerRound []AgentStatistics, accessor AgentStatisticAccessor) map[uuid.UUID]float64 {
+func averageStatisticsOverRounds(statisticsPerRound []AgentStatistics, accessor AgentStatisticAccessor, content string) map[uuid.UUID]float64 {
 	result := make(map[uuid.UUID]float64)
 	roundsAlive := make(map[uuid.UUID]int)
 	for _, round := range statisticsPerRound {
@@ -41,9 +42,25 @@ func averageStatisticsOverRounds(statisticsPerRound []AgentStatistics, accessor 
 		}
 	}
 
+	/*
+		for agentID, n := range roundsAlive {
+			result[agentID] /= float64(n)
+		}
+	*/
+
+	totalAvg := 0.0
 	for agentID, n := range roundsAlive {
 		result[agentID] /= float64(n)
+		totalAvg += result[agentID]
 	}
+	totalAvg /= float64(len(result))
+	deviation := 0.0
+	for _, lt := range result {
+		deviation += math.Pow(lt-totalAvg, 2)
+	}
+	fmt.Printf("agent %s average: %.2f\n", content, totalAvg)
+
+	// fmt.Printf("agent lifetime deviation: {%.2f}\n", math.Sqrt(deviation/float64(len(result))))
 
 	return result
 }
@@ -66,11 +83,11 @@ func CalculateStatistics(gameStates [][]GameStateDump) GameStatistics {
 	return GameStatistics{
 		PerRound: statisticsPerRound,
 		Average: AgentStatistics{
-			AgentLifetime:       averageStatisticsOverRounds(statisticsPerRound, getLifetime),
-			AgentEnergyAverage:  averageStatisticsOverRounds(statisticsPerRound, getEnergyAverage),
-			AgentEnergyVariance: averageStatisticsOverRounds(statisticsPerRound, getEnergyVariance),
-			AgentPointsAverage:  averageStatisticsOverRounds(statisticsPerRound, getPointsAverage),
-			AgentPointsVariance: averageStatisticsOverRounds(statisticsPerRound, getPointsVariance),
+			AgentLifetime:       averageStatisticsOverRounds(statisticsPerRound, getLifetime, "Lifetime"),
+			AgentEnergyAverage:  averageStatisticsOverRounds(statisticsPerRound, getEnergyAverage, "EnergyAverage"),
+			AgentEnergyVariance: averageStatisticsOverRounds(statisticsPerRound, getEnergyVariance, "EnergyVariance"),
+			AgentPointsAverage:  averageStatisticsOverRounds(statisticsPerRound, getPointsAverage, "PointsAverage"),
+			AgentPointsVariance: averageStatisticsOverRounds(statisticsPerRound, getPointsVariance, "PointsVariance"),
 		},
 	}
 }
