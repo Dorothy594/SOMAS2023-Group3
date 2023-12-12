@@ -5,7 +5,6 @@ import (
 	"SOMAS2023/internal/common/physics"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
-	"fmt"
 	"math"
 	"math/rand"
 	"sort"
@@ -50,7 +49,7 @@ func (agent *SmartAgent) DecideGovernance() utils.Governance {
 	}
 	governance := agent.which_governance_method(currentBike.GetAgents())
 
-	fmt.Println("governance method", governance)
+	//fmt.Println("governance method", governance)
 	return governance
 }
 
@@ -131,7 +130,7 @@ func (agent *SmartAgent) DecideForce(direction uuid.UUID) {
 	}
 	agent.lastPedal = pedalForce
 	agent.SetForces(forces)
-	fmt.Println("forces", forces)
+	//fmt.Println("forces", forces)
 }
 
 // DecideJoining accept higher reputation score, max the number of agents on bike
@@ -161,7 +160,7 @@ func (agent *SmartAgent) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]
 		decision[agentId] = idx+len(currentBike.GetAgents()) < utils.BikersOnBike
 	}
 
-	fmt.Println("decision join", decision)
+	//fmt.Println("decision join", decision)
 	return decision
 }
 
@@ -204,7 +203,7 @@ func (agent *SmartAgent) ProposeDirection() uuid.UUID {
 	// direction is targetLootBox
 	boxes := agent.GetGameState().GetLootBoxes()
 	id := agent.decideTargetLootBox(agent.GetGameState().GetMegaBikes()[agent.GetBike()].GetAgents(), boxes)
-	fmt.Println("id", id)
+	//fmt.Println("id", id)
 	agent.targetLootBox = id
 	return id
 }
@@ -220,7 +219,7 @@ func (agent *SmartAgent) FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) v
 	rank := agent.rankTargetProposals(proposals, boxesInMap)
 
 	var lootboxVotes voting.LootboxVoteMap = rank
-	fmt.Println("lootboxVotes", lootboxVotes)
+	//fmt.Println("lootboxVotes", lootboxVotes)
 
 	return lootboxVotes
 }
@@ -229,7 +228,7 @@ func (agent *SmartAgent) DecideAllocation() voting.IdVoteMap {
 	agent.lootBoxCnt += 1
 	currentBike := agent.GetGameState().GetMegaBikes()[agent.GetBike()]
 	vote, _ := agent.scoreAgentsForAllocation3(currentBike.GetAgents())
-	fmt.Println("enery_allocation", vote)
+	//fmt.Println("enery_allocation", vote)
 	return vote
 }
 
@@ -445,7 +444,7 @@ func (agent *SmartAgent) vote_leader(agentsOnBike []objects.IBaseBiker) voting.I
 		scores[id] = 0.7*scores1[id] + 0.3*scores2[id]
 	}
 
-	fmt.Println("vote_for_leaders", scores)
+	//fmt.Println("vote_for_leaders", scores)
 	return scores
 }
 
