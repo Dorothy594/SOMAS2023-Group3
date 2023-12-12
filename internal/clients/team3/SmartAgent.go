@@ -88,11 +88,11 @@ func (agent *SmartAgent) DecideForce(direction uuid.UUID) {
 			// Forgiveness: forgive agents pedal harder recently
 
 			// smart:
-			score := 0.3*rep.isSameColor + 0.2*rep.historyContribution + 0.2*rep.lootBoxGet + 0.3*rep.recentContribution + utils.Epsilon
+			// score := 0.3*rep.isSameColor + 0.2*rep.historyContribution + 0.2*rep.lootBoxGet + 0.3*rep.recentContribution + utils.Epsilon
 			// selfish:
 			// score := 0.85*rep.isSameColor + 0.05*rep.historyContribution + 0.05*rep.lootBoxGet + 0.05*rep.recentContribution + utils.Epsilon
 			// fair:
-			// score := 0.01*rep.isSameColor + 0.5*rep.historyContribution + 0.34*rep.lootBoxGet + 0.15*rep.recentContribution + utils.Epsilon
+			score := 0.01*rep.isSameColor + 0.5*rep.historyContribution + 0.34*rep.lootBoxGet + 0.15*rep.recentContribution + utils.Epsilon
 
 			scores[others.GetID()] = score
 			totalScore += score
@@ -142,11 +142,11 @@ func (agent *SmartAgent) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]
 		// Potential
 
 		// smart:
-		scores[idx] = 0.2*rep.isSameColor + 0.2*rep.historyContribution + 0.3*rep.lootBoxGet + 0.2*rep.recentContribution + 0.1*rep.energyRemain + utils.Epsilon
+		// scores[idx] = 0.2*rep.isSameColor + 0.2*rep.historyContribution + 0.3*rep.lootBoxGet + 0.2*rep.recentContribution + 0.1*rep.energyRemain + utils.Epsilon
 		// selfish:
 		// scores[idx] = 0.1*rep.isSameColor + 0.1*rep.historyContribution + 0.3*rep.lootBoxGet + 0.3*rep.recentContribution + 0.2*rep.energyRemain + utils.Epsilon
 		// fair:
-		// scores[idx] = 0.25*rep.isSameColor + 0.25*rep.historyContribution + 0.2*rep.lootBoxGet + 0.2*rep.recentContribution + 0.1*rep.energyRemain + utils.Epsilon
+		scores[idx] = 0.25*rep.isSameColor + 0.25*rep.historyContribution + 0.2*rep.lootBoxGet + 0.2*rep.recentContribution + 0.1*rep.energyRemain + utils.Epsilon
 
 	}
 	sort.Slice(pendingAgents, func(i, j int) bool {
@@ -182,9 +182,9 @@ func (agent *SmartAgent) ChangeBike() (targetId uuid.UUID) {
 			// Potential
 
 			// smart/selfish:
-			score += 0.3*rep.isSameColor + 0.1*rep.historyContribution + 0.1*rep.lootBoxGet + 0.2*rep.recentContribution + 0.3*rep.energyRemain + utils.Epsilon
+			// score += 0.3*rep.isSameColor + 0.1*rep.historyContribution + 0.1*rep.lootBoxGet + 0.2*rep.recentContribution + 0.3*rep.energyRemain + utils.Epsilon
 			// fair:
-			// score += 0.2*rep.isSameColor + 0.2*rep.historyContribution + 0.2*rep.lootBoxGet + 0.2*rep.recentContribution + 0.2*rep.energyRemain + utils.Epsilon
+			score += 0.2*rep.isSameColor + 0.2*rep.historyContribution + 0.2*rep.lootBoxGet + 0.2*rep.recentContribution + 0.2*rep.energyRemain + utils.Epsilon
 
 		}
 		score /= float64(len(bike.GetAgents()))
@@ -223,7 +223,7 @@ func (agent *SmartAgent) FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) v
 func (agent *SmartAgent) DecideAllocation() voting.IdVoteMap {
 	agent.lootBoxCnt += 1
 	currentBike := agent.GetGameState().GetMegaBikes()[agent.GetBike()]
-	vote, _ := agent.scoreAgentsForAllocation(currentBike.GetAgents())
+	vote, _ := agent.scoreAgentsForAllocation3(currentBike.GetAgents())
 	fmt.Println("enery_allocation", vote)
 	return vote
 }
@@ -401,11 +401,11 @@ func (agent *SmartAgent) vote_leader(agentsOnBike []objects.IBaseBiker) voting.I
 		// Cognitive dimension: is same belief?
 		// necessity: must stay alive
 		// smart:
-		score_1 := 0.4*rep.historyContribution + 0.3*rep.lootBoxGet + 0.1*rep.isSameColor + 0.2*rep.energyRemain + utils.Epsilon
+		// score_1 := 0.4*rep.historyContribution + 0.3*rep.lootBoxGet + 0.1*rep.isSameColor + 0.2*rep.energyRemain + utils.Epsilon
 		// selfish:
 		// score_1 := 0.1*rep.historyContribution + 0.3*rep.lootBoxGet + 0.5*rep.isSameColor + 0.1*rep.energyRemain + utils.Epsilon
 		// fair:
-		// score_1 := 0.25*rep.historyContribution + 0.25*rep.lootBoxGet + 0.25*rep.isSameColor + 0.25*rep.energyRemain + utils.Epsilon
+		score_1 := 0.25*rep.historyContribution + 0.25*rep.lootBoxGet + 0.25*rep.isSameColor + 0.25*rep.energyRemain + utils.Epsilon
 
 		scores1[id] = score_1
 		total_score_1 += score_1
@@ -552,11 +552,11 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 		maxDistance := float64(utils.GridHeight*utils.GridHeight + utils.GridWidth*utils.GridWidth)
 		normalized_distance := (maxDistance - distance) / maxDistance
 		// smart:
-		score := 0.2*loot + 0.1*is_color + 0.2*normalized_distance + utils.Epsilon
+		// score := 0.2*loot + 0.1*is_color + 0.2*normalized_distance + utils.Epsilon
 		// selfish:
 		// score := 0.4*loot + 0.3*is_color + 0.3*normalized_distance + utils.Epsilon
 		// fair:
-		// score := 0.0*loot + 0.0*is_color + 0.0*normalized_distance + utils.Epsilon
+		score := 0.0*loot + 0.0*is_color + 0.0*normalized_distance + utils.Epsilon
 
 		// environment
 		// social capital framework to decide which agents we should cooperate
@@ -578,11 +578,11 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 			//forgiveness
 			//improve trustness by decreasing the risk of no efforts
 			// smart:
-			score += 0.2*rep.historyContribution + 0.1*rep.recentContribution + 0.2*rep.energyRemain + utils.Epsilon
+			// score += 0.2*rep.historyContribution + 0.1*rep.recentContribution + 0.2*rep.energyRemain + utils.Epsilon
 			// selfish:
 			// score += 0.0*rep.historyContribution + 0.0*rep.recentContribution + 0.0*rep.energyRemain + utils.Epsilon
 			// fair:
-			// score += 0.4*rep.historyContribution + 0.3*rep.recentContribution + 0.3*rep.energyRemain + utils.Epsilon
+			score += 0.4*rep.historyContribution + 0.3*rep.recentContribution + 0.3*rep.energyRemain + utils.Epsilon
 		}
 
 		if score > max_score {
@@ -620,11 +620,11 @@ func (agent *SmartAgent) rankTargetProposals(proposedLootBox map[uuid.UUID]uuid.
 			normalized_distance = 0.0
 		}
 		// smart:
-		score := 0.3*loot + 0.3*is_color + 0.2*normalized_distance + 0.2*other_agents_score + utils.Epsilon
+		// score := 0.3*loot + 0.3*is_color + 0.2*normalized_distance + 0.2*other_agents_score + utils.Epsilon
 		// selfish:
-		// score := 0.3*loot + 0.5*is_color + 0.2*normalized_distance+0*other_agents_score + utils.Epsilon
+		// score := 0.3*loot + 0.5*is_color + 0.2*normalized_distance + 0*other_agents_score + utils.Epsilon
 		// fair:
-		// score := 0.3*loot + 0*is_color + 0.2*normalized_distance+0.5*other_agents_score + utils.Epsilon
+		score := 0.3*loot + 0*is_color + 0.2*normalized_distance + 0.5*other_agents_score + utils.Epsilon
 
 		scores[other_agent_proposed_lootbox_id] += score
 		sum_score += score
@@ -648,7 +648,7 @@ func (agent *SmartAgent) scoreAgentsForAllocation3(agentsOnBike []objects.IBaseB
 	scores := make(map[uuid.UUID]float64)
 	total_score := 0.0
 	for _, others := range agentsOnBike {
-		scores[others.GetID()] = rand.Float64() // has been normalized to [0.0,1.0)
+		scores[others.GetID()] = rand.Float64() + utils.Epsilon // has been normalized to [0.0,1.0)
 		total_score += scores[others.GetID()]
 	}
 	for _, others := range agentsOnBike {
@@ -660,12 +660,17 @@ func (agent *SmartAgent) scoreAgentsForAllocation3(agentsOnBike []objects.IBaseB
 // EnergyAllocation: Selfish
 func (agent *SmartAgent) scoreAgentsForAllocation2(agentsOnBike []objects.IBaseBiker) (map[uuid.UUID]float64, error) {
 	scores := make(map[uuid.UUID]float64)
+	total_score := 0.0
 	for _, others := range agentsOnBike {
 		if agent.GetID() != others.GetID() {
-			scores[others.GetID()] = 0.0
+			scores[others.GetID()] = 0.0 + utils.Epsilon
 		} else {
-			scores[others.GetID()] = 1.0
+			scores[others.GetID()] = 1.0 + utils.Epsilon
 		}
+		total_score += scores[others.GetID()]
+	}
+	for _, others := range agentsOnBike {
+		scores[others.GetID()] = float64(scores[others.GetID()] / total_score)
 	}
 	return scores, nil
 }
