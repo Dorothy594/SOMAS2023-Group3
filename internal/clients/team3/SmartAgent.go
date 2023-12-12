@@ -5,7 +5,9 @@ import (
 	"SOMAS2023/internal/common/physics"
 	"SOMAS2023/internal/common/utils"
 	"SOMAS2023/internal/common/voting"
+	"fmt"
 	"math"
+	"math/rand"
 	"sort"
 
 	"github.com/google/uuid"
@@ -43,6 +45,8 @@ func (agent *SmartAgent) DecideGovernance() utils.Governance {
 		return utils.Democracy
 	}
 	governance := agent.which_governance_method(currentBike.GetAgents())
+
+	fmt.Println("governance method", governance)
 	return governance
 }
 
@@ -82,7 +86,14 @@ func (agent *SmartAgent) DecideForce(direction uuid.UUID) {
 			// Cognitive dimension: is same belief?
 			// Pareto principle: give more energy to those with more outcome
 			// Forgiveness: forgive agents pedal harder recently
-			score := rep.isSameColor + rep.historyContribution + rep.lootBoxGet + rep.recentContribution + utils.Epsilon
+
+			// smart:
+			score := 0.3*rep.isSameColor + 0.2*rep.historyContribution + 0.2*rep.lootBoxGet + 0.3*rep.recentContribution + utils.Epsilon
+			// selfish:
+			// score := 0.85*rep.isSameColor + 0.05*rep.historyContribution + 0.05*rep.lootBoxGet + 0.05*rep.recentContribution + utils.Epsilon
+			// fair:
+			// score := 0.01*rep.isSameColor + 0.5*rep.historyContribution + 0.34*rep.lootBoxGet + 0.15*rep.recentContribution + utils.Epsilon
+
 			scores[others.GetID()] = score
 			totalScore += score
 		}
@@ -116,6 +127,7 @@ func (agent *SmartAgent) DecideForce(direction uuid.UUID) {
 	}
 	agent.lastPedal = pedalForce
 	agent.SetForces(forces)
+	fmt.Println("forces", forces)
 }
 
 // DecideJoining accept higher reputation score, max the number of agents on bike
@@ -128,7 +140,14 @@ func (agent *SmartAgent) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]
 		// Contribution and Achievement
 		// Forgiveness: forgive agents pedal harder recently
 		// Potential
-		scores[idx] = rep.isSameColor + rep.historyContribution + rep.lootBoxGet + rep.recentContribution + rep.energyRemain
+
+		// smart:
+		scores[idx] = 0.2*rep.isSameColor + 0.2*rep.historyContribution + 0.3*rep.lootBoxGet + 0.2*rep.recentContribution + 0.1*rep.energyRemain + utils.Epsilon
+		// selfish:
+		// scores[idx] = 0.1*rep.isSameColor + 0.1*rep.historyContribution + 0.3*rep.lootBoxGet + 0.3*rep.recentContribution + 0.2*rep.energyRemain + utils.Epsilon
+		// fair:
+		// scores[idx] = 0.25*rep.isSameColor + 0.25*rep.historyContribution + 0.2*rep.lootBoxGet + 0.2*rep.recentContribution + 0.1*rep.energyRemain + utils.Epsilon
+
 	}
 	sort.Slice(pendingAgents, func(i, j int) bool {
 		return scores[i] > scores[j]
@@ -137,10 +156,13 @@ func (agent *SmartAgent) DecideJoining(pendingAgents []uuid.UUID) map[uuid.UUID]
 	for idx, agentId := range pendingAgents {
 		decision[agentId] = idx+len(currentBike.GetAgents()) < utils.BikersOnBike
 	}
+
+	fmt.Println("decision join", decision)
 	return decision
 }
 
 // ChangeBike rank the average reputation score of agents on bike with empty place, go for highest rank one
+// 调整bike，需要全车人同意吗
 func (agent *SmartAgent) ChangeBike() (targetId uuid.UUID) {
 	highestAvgScore := 0.0
 	for id, bike := range agent.GetGameState().GetMegaBikes() {
@@ -158,7 +180,12 @@ func (agent *SmartAgent) ChangeBike() (targetId uuid.UUID) {
 			// Contribution and Achievement
 			// Forgiveness: forgive agents pedal harder recently
 			// Potential
-			score += rep.isSameColor + rep.historyContribution + rep.lootBoxGet + rep.recentContribution + rep.energyRemain
+
+			// smart/selfish:
+			score += 0.3*rep.isSameColor + 0.1*rep.historyContribution + 0.1*rep.lootBoxGet + 0.2*rep.recentContribution + 0.3*rep.energyRemain + utils.Epsilon
+			// fair:
+			// score += 0.2*rep.isSameColor + 0.2*rep.historyContribution + 0.2*rep.lootBoxGet + 0.2*rep.recentContribution + 0.2*rep.energyRemain + utils.Epsilon
+
 		}
 		score /= float64(len(bike.GetAgents()))
 		if score > highestAvgScore {
@@ -173,6 +200,7 @@ func (agent *SmartAgent) ProposeDirection() uuid.UUID {
 	// direction is targetLootBox
 	boxes := agent.GetGameState().GetLootBoxes()
 	id := agent.decideTargetLootBox(agent.GetGameState().GetMegaBikes()[agent.GetBike()].GetAgents(), boxes)
+	fmt.Println("id", id)
 	return id
 }
 
@@ -187,6 +215,7 @@ func (agent *SmartAgent) FinalDirectionVote(proposals map[uuid.UUID]uuid.UUID) v
 	rank := agent.rankTargetProposals(proposals, boxesInMap)
 
 	var lootboxVotes voting.LootboxVoteMap = rank
+	fmt.Println("lootboxVotes", lootboxVotes)
 
 	return lootboxVotes
 }
@@ -195,6 +224,7 @@ func (agent *SmartAgent) DecideAllocation() voting.IdVoteMap {
 	agent.lootBoxCnt += 1
 	currentBike := agent.GetGameState().GetMegaBikes()[agent.GetBike()]
 	vote, _ := agent.scoreAgentsForAllocation(currentBike.GetAgents())
+	fmt.Println("enery_allocation", vote)
 	return vote
 }
 
@@ -309,6 +339,7 @@ func (agent *SmartAgent) vote_off_leader() bool {
 	if (rep.recentGetEnergy == false) && (rep.isSameColor == 0.0) {
 		vote_off = 1.0
 	}
+	// selfish personality
 	if vote_off == 1.0 {
 		decision_to_vote_off = true
 	}
@@ -346,7 +377,7 @@ func (agent *SmartAgent) which_governance_method(agentsOnBike []objects.IBaseBik
 		need_deomocracy = 1.0
 		need_leadership = 0.0
 		// rational, fear of being taken advantage of
-		// smart personality
+		// selfish personality
 	}
 
 	if need_deomocracy > need_leadership {
@@ -369,11 +400,12 @@ func (agent *SmartAgent) vote_leader(agentsOnBike []objects.IBaseBiker) voting.I
 		// Pareto principle: give more energy to those with more outcome
 		// Cognitive dimension: is same belief?
 		// necessity: must stay alive
+		// smart:
 		score_1 := 0.4*rep.historyContribution + 0.3*rep.lootBoxGet + 0.1*rep.isSameColor + 0.2*rep.energyRemain + utils.Epsilon
-		//fair, selfish, smart
-		//fair: the weights are randomly assigned each time
-		//selfish: score_1 := 0.1*rep.historyContribution + 0.2*rep.lootBoxGet + 0.5*rep.isSameColor + 0.2*rep.energyRemain + utils.Epsilon
-		//smart: score_1 := 0.4*rep.historyContribution + 0.3*rep.lootBoxGet + 0.1*rep.isSameColor + 0.2*rep.energyRemain + utils.Epsilon
+		// selfish:
+		// score_1 := 0.1*rep.historyContribution + 0.3*rep.lootBoxGet + 0.5*rep.isSameColor + 0.1*rep.energyRemain + utils.Epsilon
+		// fair:
+		// score_1 := 0.25*rep.historyContribution + 0.25*rep.lootBoxGet + 0.25*rep.isSameColor + 0.25*rep.energyRemain + utils.Epsilon
 
 		scores1[id] = score_1
 		total_score_1 += score_1
@@ -408,6 +440,7 @@ func (agent *SmartAgent) vote_leader(agentsOnBike []objects.IBaseBiker) voting.I
 		scores[id] = 0.7*scores1[id] + 0.3*scores2[id]
 	}
 
+	fmt.Println("vote_for_leaders", scores)
 	return scores
 }
 
@@ -518,7 +551,12 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 		distance := physics.ComputeDistance(lootbox.GetPosition(), agent.GetLocation())
 		maxDistance := float64(utils.GridHeight*utils.GridHeight + utils.GridWidth*utils.GridWidth)
 		normalized_distance := (maxDistance - distance) / maxDistance
-		score := 0.2*loot + 0.2*is_color + 0.3*normalized_distance + utils.Epsilon
+		// smart:
+		score := 0.2*loot + 0.1*is_color + 0.2*normalized_distance + utils.Epsilon
+		// selfish:
+		// score := 0.4*loot + 0.3*is_color + 0.3*normalized_distance + utils.Epsilon
+		// fair:
+		// score := 0.0*loot + 0.0*is_color + 0.0*normalized_distance + utils.Epsilon
 
 		// environment
 		// social capital framework to decide which agents we should cooperate
@@ -530,7 +568,7 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 				same_colour += 1
 				same_colour_bikers = append(same_colour_bikers, others)
 			}
-			score += 0.5 * float64(same_colour/len(agentsOnBike))
+			// score += 0.5 * float64(same_colour/len(agentsOnBike))
 		}
 
 		for _, others := range same_colour_bikers {
@@ -539,7 +577,12 @@ func (agent *SmartAgent) decideTargetLootBox(agentsOnBike []objects.IBaseBiker, 
 			//opinion, trustness from direct experience
 			//forgiveness
 			//improve trustness by decreasing the risk of no efforts
-			score += 0.5*0.4*rep.historyContribution + 0.5*0.2*rep.recentContribution + 0.5*0.4*rep.energyRemain + utils.Epsilon
+			// smart:
+			score += 0.2*rep.historyContribution + 0.1*rep.recentContribution + 0.2*rep.energyRemain + utils.Epsilon
+			// selfish:
+			// score += 0.0*rep.historyContribution + 0.0*rep.recentContribution + 0.0*rep.energyRemain + utils.Epsilon
+			// fair:
+			// score += 0.4*rep.historyContribution + 0.3*rep.recentContribution + 0.3*rep.energyRemain + utils.Epsilon
 		}
 
 		if score > max_score {
@@ -576,8 +619,12 @@ func (agent *SmartAgent) rankTargetProposals(proposedLootBox map[uuid.UUID]uuid.
 		if math.IsNaN(normalized_distance) {
 			normalized_distance = 0.0
 		}
-
+		// smart:
 		score := 0.3*loot + 0.3*is_color + 0.2*normalized_distance + 0.2*other_agents_score + utils.Epsilon
+		// selfish:
+		// score := 0.3*loot + 0.5*is_color + 0.2*normalized_distance+0*other_agents_score + utils.Epsilon
+		// fair:
+		// score := 0.3*loot + 0*is_color + 0.2*normalized_distance+0.5*other_agents_score + utils.Epsilon
 
 		scores[other_agent_proposed_lootbox_id] += score
 		sum_score += score
@@ -596,6 +643,34 @@ func (agent *SmartAgent) rankTargetProposals(proposedLootBox map[uuid.UUID]uuid.
 	return scores
 }
 
+// EnergyAllocation: Fair
+func (agent *SmartAgent) scoreAgentsForAllocation3(agentsOnBike []objects.IBaseBiker) (map[uuid.UUID]float64, error) {
+	scores := make(map[uuid.UUID]float64)
+	total_score := 0.0
+	for _, others := range agentsOnBike {
+		scores[others.GetID()] = rand.Float64() // has been normalized to [0.0,1.0)
+		total_score += scores[others.GetID()]
+	}
+	for _, others := range agentsOnBike {
+		scores[others.GetID()] = float64(scores[others.GetID()] / total_score)
+	}
+	return scores, nil
+}
+
+// EnergyAllocation: Selfish
+func (agent *SmartAgent) scoreAgentsForAllocation2(agentsOnBike []objects.IBaseBiker) (map[uuid.UUID]float64, error) {
+	scores := make(map[uuid.UUID]float64)
+	for _, others := range agentsOnBike {
+		if agent.GetID() != others.GetID() {
+			scores[others.GetID()] = 0.0
+		} else {
+			scores[others.GetID()] = 1.0
+		}
+	}
+	return scores, nil
+}
+
+// EnergyAllocation: Smart
 // scoreAgentsForAllocation if self energy level is low (below average cost for a lootBox), we follow 'Smallest First', else 'Ration'
 func (agent *SmartAgent) scoreAgentsForAllocation(agentsOnBike []objects.IBaseBiker) (map[uuid.UUID]float64, error) {
 	scores := make(map[uuid.UUID]float64)
