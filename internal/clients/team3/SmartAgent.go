@@ -366,7 +366,7 @@ func (agent *SmartAgent) which_governance_method(agentsOnBike []objects.IBaseBik
 		rep := agent.reputationMap[id]
 		average_recent_contribution += rep.recentContribution
 		average_contribution += rep.historyContribution
-		average_energyRemain += rep.recentContribution
+		average_energyRemain += rep.energyRemain
 		average_recent_contribution = average_recent_contribution / float64(len(agentsOnBike))
 		average_contribution = average_contribution / float64(len(agentsOnBike))
 		average_energyRemain = average_energyRemain / float64(len(agentsOnBike))
